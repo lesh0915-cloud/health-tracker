@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+<title>건강 트래커</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Nanum+Gothic:wght@400;700;800&display=swap" rel="stylesheet" />
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0f1117;--surface:#1a1d27;--surface2:#242736;--border:#2e3247;
+  --accent:#4ade80;--accent2:#f59e0b;--danger:#f87171;--purple:#a78bfa;
+  --text:#e8eaf0;--muted:#6b7280;--radius:16px;
+}
+html,body{background:var(--bg);color:var(--text);font-family:'Nanum Gothic',sans-serif;min-height:100vh;max-width:430px;margin:0 auto;}
+h1{font-family:'Gowun Dodum',serif;}
+.app{display:flex;flex-direction:column;min-height:100vh;}
+.header{padding:20px 20px 12px;background:linear-gradient(180deg,#12151f 0%,transparent 100%);position:sticky;top:0;z-index:10;backdrop-filter:blur(12px);}
+.header-top{display:flex;justify-content:space-between;align-items:center;}
+.header h1{font-size:22px;color:var(--accent);letter-spacing:-0.5px;}
+.header-sub{font-size:12px;color:var(--muted);margin-top:2px;}
+.hstats{display:flex;gap:12px;}
+.hstat{text-align:right;font-size:11px;color:var(--muted);}
+.hstat-val{font-size:16px;font-weight:800;}
+.tabs{display:flex;gap:3px;padding:0 16px 14px;background:var(--bg);border-bottom:1px solid var(--border);}
+.tab{flex:1;padding:8px 2px;border:none;border-radius:10px;font-family:'Nanum Gothic',sans-serif;font-size:11px;font-weight:700;cursor:pointer;transition:all .2s;background:var(--surface);color:var(--muted);}
+.tab.active{background:var(--accent);color:#0f1117;}
+.tab.ex.active{background:var(--purple);color:#0f1117;}
+.content{flex:1;padding:16px 20px 100px;overflow-y:auto;}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:12px;}
+.card-title{font-size:12px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;}
+.date-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
+.date-nav button{background:var(--surface2);border:1px solid var(--border);color:var(--text);width:36px;height:36px;border-radius:10px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.dlabel{font-size:15px;font-weight:700;}
+.slabel{font-size:11px;font-weight:800;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;margin:14px 0 8px;}
+.row-btns{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;}
+.rbtn{padding:6px 12px;border-radius:20px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);font-size:12px;font-family:'Nanum Gothic',sans-serif;cursor:pointer;transition:all .2s;}
+.rbtn.am{border-color:var(--accent2);color:var(--accent2);}
+.rbtn.dr{border-color:var(--danger);color:var(--danger);}
+.rbtn.ex{border-color:var(--purple);color:var(--purple);}
+.qbtns{display:flex;gap:6px;margin-bottom:10px;}
+.qbtn{flex:1;padding:8px 4px;border-radius:12px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:12px;font-family:'Nanum Gothic',sans-serif;cursor:pointer;text-align:center;transition:all .2s;}
+.qbtn.meal.active{border-color:var(--accent);background:rgba(74,222,128,.1);}
+.qbtn.inten.active{border-color:var(--purple);background:rgba(167,139,250,.1);}
+.inp{width:100%;padding:12px;border-radius:12px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-family:'Nanum Gothic',sans-serif;font-size:14px;outline:none;resize:none;transition:border-color .2s;}
+.inp:focus{border-color:var(--accent);}
+.inp::placeholder{color:var(--muted);}
+.qty-row{display:flex;align-items:center;gap:12px;margin:8px 0;}
+.qbtn2{width:36px;height:36px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.qval{font-size:20px;font-weight:800;min-width:40px;text-align:center;}
+.qunit{font-size:13px;color:var(--muted);}
+.abtn{width:100%;padding:12px;border-radius:12px;border:none;font-family:'Nanum Gothic',sans-serif;font-size:14px;font-weight:800;cursor:pointer;transition:all .2s;margin-top:8px;}
+.abtn.meal{background:var(--accent);color:#0f1117;}
+.abtn.drink{background:var(--danger);color:white;}
+.abtn.exer{background:var(--purple);color:#0f1117;}
+.abtn:active{transform:scale(.97);}
+.logitem{display:flex;justify-content:space-between;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--border);}
+.logitem:last-child{border-bottom:none;}
+.litag{display:inline-block;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:800;margin-bottom:4px;}
+.tm{background:rgba(245,158,11,.15);color:var(--accent2);}
+.td{background:rgba(248,113,113,.15);color:var(--danger);}
+.te{background:rgba(167,139,250,.15);color:var(--purple);}
+.litext{font-size:13px;}
+.lisub{font-size:11px;color:var(--muted);margin-top:2px;}
+.delbtn{background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;padding:2px 8px;}
+.sgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.sgrid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;}
+.sbox{background:var(--surface2);border-radius:14px;padding:14px;border:1px solid var(--border);}
+.sbox.ex{border-color:rgba(167,139,250,.3);}
+.slbl{font-size:11px;color:var(--muted);margin-bottom:4px;}
+.sval{font-size:22px;font-weight:800;}
+.sval.good{color:var(--accent);}
+.sval.warn{color:var(--accent2);}
+.sval.bad{color:var(--danger);}
+.sval.ex{color:var(--purple);}
+.ssub{font-size:11px;color:var(--muted);margin-top:2px;}
+.pbwrap{margin:12px 0;}
+.pblbl{display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px;}
+.pbbg{height:8px;background:var(--surface2);border-radius:99px;overflow:hidden;}
+.pbfill{height:100%;border-radius:99px;transition:width .5s ease;}
+.fitem{display:flex;gap:10px;align-items:flex-start;padding:10px;border-radius:12px;margin-bottom:8px;}
+.fitem.good{background:rgba(74,222,128,.08);border:1px solid rgba(74,222,128,.2);}
+.fitem.ok{background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);}
+.fitem.bad{background:rgba(248,113,113,.08);border:1px solid rgba(248,113,113,.2);}
+.fitem.info{background:rgba(167,139,250,.08);border:1px solid rgba(167,139,250,.2);}
+.femi{font-size:18px;}
+.ftxt{font-size:13px;line-height:1.5;}
+.rbox{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:14px;font-size:12px;line-height:1.8;color:var(--muted);font-family:monospace;white-space:pre-wrap;max-height:240px;overflow-y:auto;margin-bottom:10px;}
+.cpybtn{width:100%;padding:12px;border-radius:12px;border:1px solid var(--accent);background:transparent;color:var(--accent);font-family:'Nanum Gothic',sans-serif;font-size:14px;font-weight:800;cursor:pointer;transition:all .2s;}
+.cpybtn.copied{background:var(--accent);color:#0f1117;}
+.empty{text-align:center;padding:32px 0;color:var(--muted);font-size:14px;}
+.eico{font-size:36px;margin-bottom:8px;}
+.hdlbl{font-size:12px;font-weight:800;color:var(--muted);letter-spacing:1px;margin:16px 0 6px;}
+.nodata{color:var(--muted);font-size:13px;text-align:center;padding:16px 0;}
+.ex-tip{font-size:12px;color:rgba(167,139,250,.8);background:rgba(167,139,250,.08);border:1px solid rgba(167,139,250,.2);border-radius:10px;padding:10px 12px;margin-bottom:12px;line-height:1.6;}
+.dur-display{font-size:28px;font-weight:800;color:var(--purple);text-align:center;padding:8px 0;}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect } = React;
+
+const DRINK_TYPES = [
+  { label: "소주", unit: "잔", alcoholPerUnit: 7.2 },
+  { label: "맥주", unit: "캔", alcoholPerUnit: 17.8 },
+  { label: "와인", unit: "잔", alcoholPerUnit: 18.0 },
+  { label: "막걸리", unit: "잔", alcoholPerUnit: 9.0 },
+  { label: "양주", unit: "잔", alcoholPerUnit: 20.0 },
+];
+const MEAL_TIMES = ["아침", "점심", "저녁", "간식"];
+const MEAL_QUALITIES = [
+  { label: "균형식사", emoji: "🥗" },
+  { label: "보통", emoji: "🍱" },
+  { label: "불량식품", emoji: "🍔" },
+];
+const EXERCISE_TYPES = [
+  { label: "근력운동", emoji: "🏋️" },
+  { label: "유산소", emoji: "🏃" },
+  { label: "스트레칭", emoji: "🧘" },
+  { label: "걷기", emoji: "🚶" },
+  { label: "수영", emoji: "🏊" },
+  { label: "기타", emoji: "⚡" },
+];
+const EXERCISE_INTENSITY = [
+  { label: "가볍게", emoji: "😊" },
+  { label: "보통", emoji: "😤" },
+  { label: "격렬하게", emoji: "🔥" },
+];
+const WHO_WEEKLY_LIMIT = 140;
+
+const todayStr = () => new Date().toISOString().slice(0, 10);
+const fmtDate = (s) =>
+  new Date(s + "T00:00:00").toLocaleDateString("ko-KR", {
+    month: "short", day: "numeric", weekday: "short",
+  });
+
+function calcAlcohol(drinks = []) {
+  return drinks.reduce((s, d) => {
+    const dt = DRINK_TYPES.find((t) => t.label === d.type);
+    return s + (dt ? dt.alcoholPerUnit * d.amount : 0);
+  }, 0);
+}
+function calcExerciseMin(exercises = []) {
+  return exercises.reduce((s, e) => s + (e.duration || 0), 0);
+}
+function getWeekLogs(logs) {
+  const now = new Date();
+  return logs.filter((l) => {
+    const diff = (now - new Date(l.date + "T00:00:00")) / 86400000;
+    return diff >= 0 && diff < 7;
+  });
+}
+function buildReport(logs) {
+  const week = getWeekLogs(logs);
+  if (!week.length) return "이번 주 기록이 없습니다.";
+  const totalAlc = week.reduce((s, l) => s + calcAlcohol(l.drinks), 0);
+  const totalExMin = week.reduce((s, l) => s + calcExerciseMin(l.exercises), 0);
+  const drinkDays = week.filter((l) => l.drinks?.length > 0).length;
+  const mealDays = week.filter((l) => l.meals?.length > 0).length;
+  const exDays = week.filter((l) => l.exercises?.length > 0).length;
+  let r = `📋 주간 건강 리포트 (최근 7일)\n${"─".repeat(32)}\n`;
+  r += `📅 기록일: ${mealDays}일 / 음주일: ${drinkDays}일 / 운동일: ${exDays}일\n`;
+  r += `🍶 총 알코올: ${totalAlc.toFixed(1)}g (WHO 여성 권고: 140g/주)\n`;
+  r += `💪 총 운동: ${totalExMin}분 (WHO 권고: 주 150분 이상)\n\n`;
+  [...week].sort((a, b) => b.date.localeCompare(a.date)).forEach((l) => {
+    r += `[${fmtDate(l.date)}]\n`;
+    l.meals?.forEach((m) => { r += `  🍽 ${m.time} | ${m.quality} | ${m.description}\n`; });
+    l.drinks?.forEach((d) => {
+      const dt = DRINK_TYPES.find((t) => t.label === d.type);
+      r += `  🍶 ${d.type} ${d.amount}${dt?.unit} (${(dt?.alcoholPerUnit * d.amount).toFixed(1)}g)${d.note ? " | " + d.note : ""}\n`;
+    });
+    l.exercises?.forEach((e) => {
+      r += `  💪 ${e.type} | ${e.intensity} | ${e.duration}분${e.note ? " | " + e.note : ""}\n`;
+    });
+    if (l.memo) r += `  📝 ${l.memo}\n`;
+    r += "\n";
+  });
+  r += `${"─".repeat(32)}\n위 내용을 Claude에게 붙여넣고 피드백을 받으세요.`;
+  return r;
+}
+
+function HealthTracker() {
+  const [tab, setTab] = useState("record");
+  const [selDate, setSelDate] = useState(todayStr());
+  const [logs, setLogs] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("ht_logs") || "[]"); } catch { return []; }
+  });
+  const [mealTime, setMealTime] = useState("점심");
+  const [mealQ, setMealQ] = useState("보통");
+  const [mealDesc, setMealDesc] = useState("");
+  const [drinkType, setDrinkType] = useState("소주");
+  const [drinkAmt, setDrinkAmt] = useState(1);
+  const [drinkNote, setDrinkNote] = useState("");
+  const [exType, setExType] = useState("근력운동");
+  const [exIntensity, setExIntensity] = useState("보통");
+  const [exDuration, setExDuration] = useState(30);
+  const [exNote, setExNote] = useState("");
+  const [memo, setMemo] = useState("");
+  const [copied, setCopied] = useState(false);
+
+  const saveLogs = (updated) => {
+    setLogs(updated);
+    try { localStorage.setItem("ht_logs", JSON.stringify(updated)); } catch {}
+  };
+  const getDay = (date) => logs.find((l) => l.date === date) || { date, meals: [], drinks: [], exercises: [], memo: "" };
+  const upsertDay = (date, patch) => {
+    const day = getDay(date);
+    saveLogs([...logs.filter((l) => l.date !== date), { ...day, ...patch }]);
+  };
+  const changeDate = (d) => {
+    const nd = new Date(selDate + "T00:00:00");
+    nd.setDate(nd.getDate() + d);
+    const ns = nd.toISOString().slice(0, 10);
+    if (ns <= todayStr()) { setSelDate(ns); setMemo(getDay(ns)?.memo || ""); }
+  };
+
+  const curDay = getDay(selDate);
+
+  const addMeal = () => {
+    if (!mealDesc.trim()) return;
+    const day = getDay(selDate);
+    upsertDay(selDate, { meals: [...day.meals, { id: Date.now(), time: mealTime, quality: mealQ, description: mealDesc.trim() }] });
+    setMealDesc("");
+  };
+  const delMeal = (id) => { const d = getDay(selDate); upsertDay(selDate, { meals: d.meals.filter((m) => m.id !== id) }); };
+  const addDrink = () => {
+    const day = getDay(selDate);
+    upsertDay(selDate, { drinks: [...day.drinks, { id: Date.now(), type: drinkType, amount: drinkAmt, note: drinkNote.trim() }] });
+    setDrinkAmt(1); setDrinkNote("");
+  };
+  const delDrink = (id) => { const d = getDay(selDate); upsertDay(selDate, { drinks: d.drinks.filter((x) => x.id !== id) }); };
+  const addExercise = () => {
+    const day = getDay(selDate);
+    upsertDay(selDate, { exercises: [...(day.exercises || []), { id: Date.now(), type: exType, intensity: exIntensity, duration: exDuration, note: exNote.trim() }] });
+    setExDuration(30); setExNote("");
+  };
+  const delExercise = (id) => { const d = getDay(selDate); upsertDay(selDate, { exercises: (d.exercises || []).filter((x) => x.id !== id) }); };
+
+  const weekLogs = getWeekLogs(logs);
+  const weekAlc = weekLogs.reduce((s, l) => s + calcAlcohol(l.drinks), 0);
+  const weekExMin = weekLogs.reduce((s, l) => s + calcExerciseMin(l.exercises), 0);
+  const wDrinkDays = weekLogs.filter((l) => l.drinks?.length > 0).length;
+  const wMealDays = weekLogs.filter((l) => l.meals?.length > 0).length;
+  const wExDays = weekLogs.filter((l) => l.exercises?.length > 0).length;
+  const alcPct = Math.min((weekAlc / WHO_WEEKLY_LIMIT) * 100, 100);
+  const exPct = Math.min((weekExMin / 150) * 100, 100);
+  const alcColor = alcPct < 50 ? { cls: "good", bar: "#4ade80" } : alcPct < 85 ? { cls: "warn", bar: "#f59e0b" } : { cls: "bad", bar: "#f87171" };
+  const exColor = exPct >= 100 ? { cls: "good", bar: "#4ade80" } : exPct >= 60 ? { cls: "warn", bar: "#f59e0b" } : { cls: "bad", bar: "#f87171" };
+
+  const feedbacks = [];
+  if (weekAlc === 0) feedbacks.push({ t: "good", e: "🎉", m: "이번 주 음주 없음! 콜레스테롤 관리에 최상의 선택입니다." });
+  else if (weekAlc <= WHO_WEEKLY_LIMIT) feedbacks.push({ t: "ok", e: "⚠️", m: `이번 주 알코올 ${weekAlc.toFixed(0)}g — 권고 이내이나 지속 관리하세요.` });
+  else feedbacks.push({ t: "bad", e: "🚨", m: `이번 주 ${weekAlc.toFixed(0)}g — WHO 권고(140g) 초과! 수면·콜레스테롤 모두 영향받습니다.` });
+  if (weekExMin >= 150) feedbacks.push({ t: "good", e: "💪", m: `주간 운동 ${weekExMin}분 달성! WHO 권고(150분) 완료. 훌륭합니다!` });
+  else feedbacks.push({ t: "info", e: "🏋️", m: `주간 운동 ${weekExMin}분 — 목표(150분)까지 ${150 - weekExMin}분 남았습니다.` });
+  if (wDrinkDays >= 5) feedbacks.push({ t: "bad", e: "🍶", m: `주 ${wDrinkDays}일 음주 — 주 2일 이상 금주일을 권장합니다.` });
+  if (wMealDays >= 5) feedbacks.push({ t: "good", e: "📝", m: "식단 기록 꾸준히 유지 중! 좋은 습관입니다." });
+
+  const report = buildReport(logs);
+  const copyReport = () => {
+    navigator.clipboard.writeText(report).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); });
+  };
+
+  return (
+    <div className="app">
+      <div className="header">
+        <div className="header-top">
+          <div>
+            <h1>건강 트래커</h1>
+            <div className="header-sub">식단 · 음주 · 운동 관리</div>
+          </div>
+          <div className="hstats">
+            <div className="hstat">
+              <div>주간 알코올</div>
+              <div className="hstat-val" style={{color: alcColor.bar}}>{weekAlc.toFixed(0)}g</div>
+            </div>
+            <div className="hstat">
+              <div>주간 운동</div>
+              <div className="hstat-val" style={{color: exColor.bar}}>{weekExMin}분</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="tabs">
+        {[["record","📝 기록",false],["exercise","💪 운동",true],["stats","📊 통계",false],["history","📅 기록장",false],["report","📤 리포트",false]].map(([k,l,isEx]) => (
+          <button key={k} className={`tab${isEx?" ex":""}${tab===k?" active":""}`} onClick={() => setTab(k)}>{l}</button>
+        ))}
+      </div>
+
+      <div className="content">
+        {tab === "record" && (<>
+          <div className="date-nav">
+            <button onClick={() => changeDate(-1)}>‹</button>
+            <div className="dlabel">{fmtDate(selDate)}{selDate===todayStr()?" (오늘)":""}</div>
+            <button onClick={() => changeDate(1)} disabled={selDate===todayStr()} style={{opacity:selDate===todayStr()?0.3:1}}>›</button>
+          </div>
+          <div className="card">
+            <div className="card-title">🍽 식단 기록</div>
+            <div className="slabel">식사 시간</div>
+            <div className="row-btns">{MEAL_TIMES.map((t) => (<button key={t} className={`rbtn${mealTime===t?" am":""}`} onClick={() => setMealTime(t)}>{t}</button>))}</div>
+            <div className="slabel">식사 품질</div>
+            <div className="qbtns">{MEAL_QUALITIES.map((q) => (<button key={q.label} className={`qbtn meal${mealQ===q.label?" active":""}`} onClick={() => setMealQ(q.label)}>{q.emoji}<br/>{q.label}</button>))}</div>
+            <div className="slabel">식사 내용</div>
+            <textarea className="inp" rows={2} placeholder="예) 현미밥, 된장국, 두부구이" value={mealDesc} onChange={(e) => setMealDesc(e.target.value)} />
+            <button className="abtn meal" onClick={addMeal}>식단 추가</button>
+            {curDay.meals?.map((m) => (
+              <div key={m.id} className="logitem">
+                <div style={{flex:1}}><span className="litag tm">{m.time}</span><div className="litext">{m.description}</div><div className="lisub">{m.quality}</div></div>
+                <button className="delbtn" onClick={() => delMeal(m.id)}>×</button>
+              </div>
+            ))}
+          </div>
+          <div className="card">
+            <div className="card-title">🍶 음주 기록</div>
+            <div className="slabel">주류 종류</div>
+            <div className="row-btns">{DRINK_TYPES.map((d) => (<button key={d.label} className={`rbtn${drinkType===d.label?" dr":""}`} onClick={() => setDrinkType(d.label)}>{d.label}</button>))}</div>
+            <div className="slabel">수량</div>
+            <div className="qty-row">
+              <button className="qbtn2" onClick={() => setDrinkAmt(Math.max(0.5, drinkAmt-0.5))}>−</button>
+              <div className="qval">{drinkAmt}</div>
+              <div className="qunit">{DRINK_TYPES.find((d) => d.label===drinkType)?.unit}</div>
+              <button className="qbtn2" onClick={() => setDrinkAmt(drinkAmt+0.5)}>+</button>
+            </div>
+            <div style={{fontSize:12,color:"var(--muted)",marginBottom:8}}>알코올 {(DRINK_TYPES.find((d) => d.label===drinkType)?.alcoholPerUnit*drinkAmt).toFixed(1)}g 예상</div>
+            <input className="inp" placeholder="메모 (선택)" value={drinkNote} onChange={(e) => setDrinkNote(e.target.value)} />
+            <button className="abtn drink" onClick={addDrink}>음주 기록</button>
+            {curDay.drinks?.map((d) => {
+              const dt = DRINK_TYPES.find((t) => t.label===d.type);
+              return (<div key={d.id} className="logitem"><div style={{flex:1}}><span className="litag td">{d.type}</span><div className="litext">{d.amount}{dt?.unit} — {(dt?.alcoholPerUnit*d.amount).toFixed(1)}g</div>{d.note&&<div className="lisub">{d.note}</div>}</div><button className="delbtn" onClick={() => delDrink(d.id)}>×</button></div>);
+            })}
+          </div>
+          <div className="card">
+            <div className="card-title">📝 오늘 메모</div>
+            <textarea className="inp" rows={3} placeholder="컨디션, 특이사항 등" value={memo} onChange={(e) => setMemo(e.target.value)} onBlur={() => upsertDay(selDate,{memo})} />
+          </div>
+        </>)}
+
+        {tab === "exercise" && (<>
+          <div className="date-nav">
+            <button onClick={() => changeDate(-1)}>‹</button>
+            <div className="dlabel">{fmtDate(selDate)}{selDate===todayStr()?" (오늘)":""}</div>
+            <button onClick={() => changeDate(1)} disabled={selDate===todayStr()} style={{opacity:selDate===todayStr()?0.3:1}}>›</button>
+          </div>
+          <div className="ex-tip">💡 <strong>콜레스테롤 관리 TIP</strong><br/>근력운동은 HDL(좋은 콜레스테롤)을 높이고, 유산소운동은 LDL(나쁜 콜레스테롤)을 낮추는 데 효과적입니다. WHO는 주 150분 이상 중강도 운동을 권장합니다.</div>
+          <div className="card">
+            <div className="card-title">💪 운동 기록</div>
+            <div className="slabel">운동 종류</div>
+            <div className="row-btns">{EXERCISE_TYPES.map((e) => (<button key={e.label} className={`rbtn${exType===e.label?" ex":""}`} onClick={() => setExType(e.label)}>{e.emoji} {e.label}</button>))}</div>
+            <div className="slabel">운동 강도</div>
+            <div className="qbtns">{EXERCISE_INTENSITY.map((i) => (<button key={i.label} className={`qbtn inten${exIntensity===i.label?" active":""}`} onClick={() => setExIntensity(i.label)}>{i.emoji}<br/>{i.label}</button>))}</div>
+            <div className="slabel">운동 시간</div>
+            <div className="qty-row">
+              <button className="qbtn2" onClick={() => setExDuration(Math.max(5,exDuration-5))}>−</button>
+              <div className="dur-display">{exDuration}</div>
+              <div className="qunit">분</div>
+              <button className="qbtn2" onClick={() => setExDuration(exDuration+5)}>+</button>
+            </div>
+            <div className="slabel">메모 (선택)</div>
+            <input className="inp" placeholder="예) 스쿼트 3세트, 런닝머신 30분" value={exNote} onChange={(e) => setExNote(e.target.value)} />
+            <button className="abtn exer" onClick={addExercise}>운동 추가</button>
+            {(curDay.exercises||[]).map((e) => (
+              <div key={e.id} className="logitem">
+                <div style={{flex:1}}><span className="litag te">{EXERCISE_TYPES.find((t) => t.label===e.type)?.emoji} {e.type}</span><div className="litext">{e.duration}분 · {e.intensity}</div>{e.note&&<div className="lisub">{e.note}</div>}</div>
+                <button className="delbtn" onClick={() => delExercise(e.id)}>×</button>
+              </div>
+            ))}
+            {(curDay.exercises||[]).length>0&&(
+              <div style={{marginTop:10,padding:"10px",background:"rgba(167,139,250,.08)",borderRadius:10,fontSize:13,color:"var(--purple)",textAlign:"center"}}>
+                오늘 총 운동: <strong>{calcExerciseMin(curDay.exercises||[])}분</strong>
+              </div>
+            )}
+          </div>
+          <div className="card">
+            <div className="card-title">📊 이번 주 운동 현황</div>
+            <div className="sgrid3">
+              <div className="sbox ex"><div className="slbl">총 운동</div><div className={`sval ${exColor.cls}`}>{weekExMin}분</div><div className="ssub">목표 150분</div></div>
+              <div className="sbox ex"><div className="slbl">운동일</div><div className={`sval ${wExDays>=4?"good":wExDays>=2?"warn":"bad"}`}>{wExDays}일</div><div className="ssub">주 3~5일 권장</div></div>
+              <div className="sbox ex"><div className="slbl">일 평균</div><div className="sval ex">{wExDays>0?Math.round(weekExMin/wExDays):0}분</div><div className="ssub">운동일 기준</div></div>
+            </div>
+            <div className="pbwrap" style={{marginTop:14}}>
+              <div className="pblbl"><span>주간 운동 목표 (150분)</span><span style={{color:exColor.bar}}>{Math.min(exPct,100).toFixed(0)}%</span></div>
+              <div className="pbbg"><div className="pbfill" style={{width:`${exPct}%`,background:exColor.bar}} /></div>
+            </div>
+          </div>
+        </>)}
+
+        {tab === "stats" && (<>
+          <div className="card">
+            <div className="card-title">📊 이번 주 전체 현황</div>
+            <div className="sgrid">
+              {[
+                {l:"알코올 섭취",v:`${weekAlc.toFixed(0)}g`,s:"권고: 140g 이하",c:alcColor.cls},
+                {l:"음주일",v:`${wDrinkDays}일`,s:"권고: 주 2일 이하",c:wDrinkDays>=5?"bad":wDrinkDays>=3?"warn":"good"},
+                {l:"주간 운동",v:`${weekExMin}분`,s:"권고: 150분 이상",c:exColor.cls},
+                {l:"운동일",v:`${wExDays}일`,s:"권장: 주 3~5일",c:wExDays>=4?"good":wExDays>=2?"warn":"bad"},
+                {l:"식단 기록일",v:`${wMealDays}일`,s:"목표: 주 5일+",c:wMealDays>=5?"good":wMealDays>=3?"warn":"bad"},
+                {l:"누적 기록",v:`${logs.length}일`,s:"전체",c:"good"},
+              ].map((s) => (<div key={s.l} className="sbox"><div className="slbl">{s.l}</div><div className={`sval ${s.c}`}>{s.v}</div><div className="ssub">{s.s}</div></div>))}
+            </div>
+            <div className="pbwrap" style={{marginTop:14}}>
+              <div className="pblbl"><span>알코올 권고량 대비</span><span style={{color:alcColor.bar}}>{alcPct.toFixed(0)}%</span></div>
+              <div className="pbbg"><div className="pbfill" style={{width:`${alcPct}%`,background:alcColor.bar}} /></div>
+            </div>
+            <div className="pbwrap">
+              <div className="pblbl"><span>운동 목표 달성률</span><span style={{color:exColor.bar}}>{Math.min(exPct,100).toFixed(0)}%</span></div>
+              <div className="pbbg"><div className="pbfill" style={{width:`${Math.min(exPct,100)}%`,background:exColor.bar}} /></div>
+            </div>
+          </div>
+          <div className="card">
+            <div className="card-title">💬 자동 피드백</div>
+            {feedbacks.map((f,i) => (<div key={i} className={`fitem ${f.t}`}><span className="femi">{f.e}</span><span className="ftxt">{f.m}</span></div>))}
+          </div>
+          <div className="card" style={{background:"rgba(248,113,113,.05)",borderColor:"rgba(248,113,113,.2)"}}>
+            <div className="card-title" style={{color:"var(--danger)"}}>⚠️ 건강 참고</div>
+            <p style={{fontSize:13,lineHeight:1.7,color:"var(--muted)"}}>본 앱은 일반적 기준을 제공합니다. 정확한 건강 관리는 전문의 상담을 권장합니다.</p>
+          </div>
+        </>)}
+
+        {tab === "history" && (<>
+          {!logs.length
+            ? <div className="empty"><div className="eico">📭</div>아직 기록이 없습니다.<br/>기록 탭에서 시작해 보세요!</div>
+            : [...logs].sort((a,b) => b.date.localeCompare(a.date)).map((l) => (
+              <div key={l.date}>
+                <div className="hdlbl">{fmtDate(l.date)}{l.date===todayStr()?" — 오늘":""}</div>
+                <div className="card" style={{marginBottom:6}}>
+                  {!l.meals?.length&&!l.drinks?.length&&!l.exercises?.length&&!l.memo&&<div className="nodata">기록 없음</div>}
+                  {l.meals?.map((m) => (<div key={m.id} className="logitem"><div><span className="litag tm">{m.time}</span><div className="litext">{m.description}</div><div className="lisub">{m.quality}</div></div></div>))}
+                  {l.drinks?.map((d) => { const dt=DRINK_TYPES.find((t) => t.label===d.type); return (<div key={d.id} className="logitem"><div><span className="litag td">{d.type}</span><div className="litext">{d.amount}{dt?.unit} — {(dt?.alcoholPerUnit*d.amount).toFixed(1)}g</div>{d.note&&<div className="lisub">{d.note}</div>}</div></div>); })}
+                  {(l.exercises||[]).map((e) => (<div key={e.id} className="logitem"><div><span className="litag te">{EXERCISE_TYPES.find((t) => t.label===e.type)?.emoji} {e.type}</span><div className="litext">{e.duration}분 · {e.intensity}</div>{e.note&&<div className="lisub">{e.note}</div>}</div></div>))}
+                  {l.memo&&<div style={{fontSize:13,color:"var(--muted)",paddingTop:8}}>📝 {l.memo}</div>}
+                </div>
+              </div>
+            ))
+          }
+        </>)}
+
+        {tab === "report" && (<>
+          <div className="card">
+            <div className="card-title">📤 Claude 피드백용 리포트</div>
+            <p style={{fontSize:13,color:"var(--muted)",lineHeight:1.6,marginBottom:12}}>아래 내용을 복사하여 Claude에게 붙여넣으시면 맞춤 피드백을 받으실 수 있습니다.</p>
+            <div className="rbox">{report}</div>
+            <button className={`cpybtn${copied?" copied":""}`} onClick={copyReport}>{copied?"✓ 복사 완료!":"📋 리포트 복사하기"}</button>
+          </div>
+          <div className="card" style={{background:"rgba(74,222,128,.05)",borderColor:"rgba(74,222,128,.2)"}}>
+            <div className="card-title" style={{color:"var(--accent)"}}>💡 사용 방법</div>
+            <div style={{fontSize:13,lineHeight:1.9,color:"var(--muted)"}}>
+              1. 매일 식단·음주·운동을 기록하세요<br/>
+              2. 주 1회 리포트를 복사하세요<br/>
+              3. Claude 새 대화에서 붙여넣기<br/>
+              4. 맞춤 피드백을 받으세요 ✓
+            </div>
+          </div>
+        </>)}
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<HealthTracker />);
+</script>
+</body>
+</html>
