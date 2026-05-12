@@ -34,6 +34,7 @@ h1{font-family:'Gowun Dodum',serif;}
 .card-title{font-size:12px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;}
 .date-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
 .date-nav button{background:var(--surface2);border:1px solid var(--border);color:var(--text);width:36px;height:36px;border-radius:10px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.today-btn{background:rgba(74,222,128,.15) !important;border-color:var(--accent) !important;color:var(--accent) !important;font-size:11px !important;font-weight:800;width:auto !important;padding:0 10px !important;white-space:nowrap;}
 .dlabel{font-size:15px;font-weight:700;}
 .slabel{font-size:11px;font-weight:800;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;margin:14px 0 8px;}
 .row-btns{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;}
@@ -183,12 +184,31 @@ function buildReport(logs) {
   return r;
 }
 
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw1E6ScpOO9jtxd8u2szzB660rHIQsv6GT3Uv7w8eC3tC0VWpJ7Rbxj0717jv-c2kVDiw/exec";
+
+async function sheetsLoad() {
+  try {
+    const res = await fetch(SCRIPT_URL + "?action=load");
+    const data = await res.json();
+    const logs = Object.entries(data).map(([date, raw]) => {
+      try { return JSON.parse(raw); } catch { return { date, meals: [], drinks: [], exercises: [], memo: "" }; }
+    });
+    return logs;
+  } catch { return null; }
+}
+
+async function sheetsSave(dayObj) {
+  try {
+    const params = new URLSearchParams({ action: "save", date: dayObj.date, data: JSON.stringify(dayObj) });
+    await fetch(SCRIPT_URL + "?" + params.toString());
+  } catch {}
+}
+
 function HealthTracker() {
   const [tab, setTab] = useState("record");
   const [selDate, setSelDate] = useState(todayStr());
-  const [logs, setLogs] = useState(() => {
-    try { return JSON.parse(localStorage.getItem("ht_logs") || "[]"); } catch { return []; }
-  });
+  const [logs, setLogs] = useState([]);
+  const [syncing, setSyncing] = useState(true);
   const [mealTime, setMealTime] = useState("점심");
   const [mealQ, setMealQ] = useState("보통");
   const [mealDesc, setMealDesc] = useState("");
@@ -202,20 +222,41 @@ function HealthTracker() {
   const [memo, setMemo] = useState("");
   const [copied, setCopied] = useState(false);
 
+  // 앱 시작시 Google Sheets에서 불러오기
+  useEffect(() => {
+    setSyncing(true);
+    sheetsLoad().then(data => {
+      if (data) setLogs(data);
+      setSyncing(false);
+    });
+  }, []);
+
+  const getDay = (date) => logs.find((l) => l.date === date) || { date, meals: [], drinks: [], exercises: [], memo: "" };
+
   const saveLogs = (updated) => {
     setLogs(updated);
-    try { localStorage.setItem("ht_logs", JSON.stringify(updated)); } catch {}
   };
-  const getDay = (date) => logs.find((l) => l.date === date) || { date, meals: [], drinks: [], exercises: [], memo: "" };
+
   const upsertDay = (date, patch) => {
     const day = getDay(date);
-    saveLogs([...logs.filter((l) => l.date !== date), { ...day, ...patch }]);
+    const updatedDay = { ...day, ...patch };
+    saveLogs([...logs.filter((l) => l.date !== date), updatedDay]);
+    sheetsSave(updatedDay); // Google Sheets에 저장
   };
-  const changeDate = (d) => {
-    const nd = new Date(selDate + "T00:00:00");
-    nd.setDate(nd.getDate() + d);
-    const ns = nd.toISOString().slice(0, 10);
-    if (ns <= todayStr()) { setSelDate(ns); setMemo(getDay(ns)?.memo || ""); }
+  const changeDate = (delta) => {
+    setSelDate(prev => {
+      const nd = new Date(prev + "T12:00:00");
+      nd.setDate(nd.getDate() + delta);
+      const ns = nd.toISOString().slice(0, 10);
+      if (ns > todayStr()) return prev;
+      setMemo(getDay(ns)?.memo || "");
+      return ns;
+    });
+  };
+  const goToday = () => {
+    const t = todayStr();
+    setSelDate(t);
+    setMemo(getDay(t)?.memo || "");
   };
 
   const curDay = getDay(selDate);
@@ -271,7 +312,7 @@ function HealthTracker() {
         <div className="header-top">
           <div>
             <h1>건강 트래커</h1>
-            <div className="header-sub">식단 · 음주 · 운동 관리</div>
+            <div className="header-sub">식단 · 음주 · 운동 관리 {syncing ? "⏳ 동기화 중..." : "☁️ 동기화 완료"}</div>
           </div>
           <div className="hstats">
             <div className="hstat">
@@ -299,6 +340,11 @@ function HealthTracker() {
             <div className="dlabel">{fmtDate(selDate)}{selDate===todayStr()?" (오늘)":""}</div>
             <button onClick={() => changeDate(1)} disabled={selDate===todayStr()} style={{opacity:selDate===todayStr()?0.3:1}}>›</button>
           </div>
+          {selDate !== todayStr() && (
+            <div style={{textAlign:"center",marginBottom:12}}>
+              <button className="today-btn" onClick={goToday} style={{background:"rgba(74,222,128,.15)",border:"1px solid var(--accent)",color:"var(--accent)",borderRadius:20,padding:"6px 20px",fontSize:12,fontWeight:800,cursor:"pointer",fontFamily:"'Nanum Gothic',sans-serif"}}>오늘로 돌아가기</button>
+            </div>
+          )}
           <div className="card">
             <div className="card-title">🍽 식단 기록</div>
             <div className="slabel">식사 시간</div>
@@ -346,6 +392,11 @@ function HealthTracker() {
             <div className="dlabel">{fmtDate(selDate)}{selDate===todayStr()?" (오늘)":""}</div>
             <button onClick={() => changeDate(1)} disabled={selDate===todayStr()} style={{opacity:selDate===todayStr()?0.3:1}}>›</button>
           </div>
+          {selDate !== todayStr() && (
+            <div style={{textAlign:"center",marginBottom:12}}>
+              <button onClick={goToday} style={{background:"rgba(74,222,128,.15)",border:"1px solid var(--accent)",color:"var(--accent)",borderRadius:20,padding:"6px 20px",fontSize:12,fontWeight:800,cursor:"pointer",fontFamily:"'Nanum Gothic',sans-serif"}}>오늘로 돌아가기</button>
+            </div>
+          )}
           <div className="ex-tip">💡 <strong>콜레스테롤 관리 TIP</strong><br/>근력운동은 HDL(좋은 콜레스테롤)을 높이고, 유산소운동은 LDL(나쁜 콜레스테롤)을 낮추는 데 효과적입니다. WHO는 주 150분 이상 중강도 운동을 권장합니다.</div>
           <div className="card">
             <div className="card-title">💪 운동 기록</div>
