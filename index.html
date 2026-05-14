@@ -133,7 +133,12 @@ const EXERCISE_INTENSITY = [
 ];
 const WHO_WEEKLY_LIMIT = 140;
 
-const todayStr = () => new Date().toISOString().slice(0, 10);
+const todayStr = () => {
+  const now = new Date();
+  const kst = new Date(now.getTime() + 9 * 60 * 60 * 1000);
+  return kst.toISOString().slice(0, 10);
+};
+const maxDateStr = "2030-12-31";
 const fmtDate = (s) =>
   new Date(s + "T00:00:00").toLocaleDateString("ko-KR", {
     month: "short", day: "numeric", weekday: "short",
@@ -248,7 +253,7 @@ function HealthTracker() {
       const nd = new Date(prev + "T12:00:00");
       nd.setDate(nd.getDate() + delta);
       const ns = nd.toISOString().slice(0, 10);
-      if (ns > todayStr()) return prev;
+      if (ns > maxDateStr) return prev;
       setMemo(getDay(ns)?.memo || "");
       return ns;
     });
@@ -338,7 +343,7 @@ function HealthTracker() {
           <div className="date-nav">
             <button onClick={() => changeDate(-1)}>‹</button>
             <div className="dlabel">{fmtDate(selDate)}{selDate===todayStr()?" (오늘)":""}</div>
-            <button onClick={() => changeDate(1)} disabled={selDate===todayStr()} style={{opacity:selDate===todayStr()?0.3:1}}>›</button>
+            <button onClick={() => changeDate(1)} disabled={selDate>=maxDateStr} style={{opacity:selDate>=maxDateStr?0.3:1}}>›</button>
           </div>
           {selDate !== todayStr() && (
             <div style={{textAlign:"center",marginBottom:12}}>
@@ -390,7 +395,7 @@ function HealthTracker() {
           <div className="date-nav">
             <button onClick={() => changeDate(-1)}>‹</button>
             <div className="dlabel">{fmtDate(selDate)}{selDate===todayStr()?" (오늘)":""}</div>
-            <button onClick={() => changeDate(1)} disabled={selDate===todayStr()} style={{opacity:selDate===todayStr()?0.3:1}}>›</button>
+            <button onClick={() => changeDate(1)} disabled={selDate>=maxDateStr} style={{opacity:selDate>=maxDateStr?0.3:1}}>›</button>
           </div>
           {selDate !== todayStr() && (
             <div style={{textAlign:"center",marginBottom:12}}>
